@@ -25,6 +25,7 @@ int open_serial(const char *device_name)
     cfsetospeed(&conf_tio, BAUDRATE);
     //non canonical, non echo back
     conf_tio.c_lflag &= ~(ECHO | ICANON);
+    conf_tio.c_oflag &= ~(ONLCR | OCRNL);
     //non blocking
     conf_tio.c_cc[VMIN] = 0;
     conf_tio.c_cc[VTIME] = 0;
