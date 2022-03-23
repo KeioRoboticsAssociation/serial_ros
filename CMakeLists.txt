@@ -25,10 +25,14 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
+add_executable(rogi_serial_node src/rogi_serial.cpp)
+add_dependencies(rogi_serial_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(rogi_serial_node ${catkin_LIBRARIES})
 
-add_executable(serial_ros src/main.cpp)
-add_dependencies(serial_ros ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(serial_ros ${catkin_LIBRARIES})
+
+# add_executable(serial_ros src/serial_ros.cpp)
+# add_dependencies(serial_ros ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# target_link_libraries(serial_ros ${catkin_LIBRARIES})
 
 # add_executable(serial_test_sync_node src/serial_test_sync.cpp)
 # add_dependencies(serial_test_sync_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
