@@ -4,6 +4,8 @@
 #include "std_msgs/Empty.h"
 #include "std_msgs/Char.h"
 
+#include <rogi_link_msgs/rogilink.h>
+
 #include <string>
 #include <unistd.h>
 #include <fcntl.h>
@@ -44,7 +46,7 @@ char *floattochar;
 int floatdatasize = 0;
 
 
-void sub_callback(const std_msgs::Char &serial_msg)
+void sub_callback(const std_msgs::Float32MultiArray &serial_msg)
 {
     if (subflag)
     {
@@ -53,9 +55,9 @@ void sub_callback(const std_msgs::Char &serial_msg)
     }
     delete[] floattochar;
     // floatdatasize = serial_msg.data.size(); //ここら辺場合に依ってしまう、他ノードでどこまで指定するか…
-    floattochar = new char[11]; 
+    floattochar = new char[11];
     floattochar[0] = 0xFF;
-    *(int *)(&floattochar[1]) = serial_msg.data[0];//canID
+    *(char *)(&floattochar[1]) = serial_msg.data[0]; //canID
     //memcpy(&floattochar[1], &datasize, 4);
     for (int i = 0; i < floatdatasize; i++)
     {
