@@ -8,8 +8,8 @@ project(serial_ros)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(
-  rogi_link_msgs
   catkin REQUIRED COMPONENTS
+  rogi_link_msgs
   roscpp
   rospy
   std_msgs
@@ -21,7 +21,7 @@ find_package(
   )
 
 catkin_package(
-  INCLUDE_DIRS include
+  # INCLUDE_DIRS include
   LIBRARIES serial_ros
   CATKIN_DEPENDS rogi_link_msgs roscpp rospy std_msgs 
 #  DEPENDS system_lib

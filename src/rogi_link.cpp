@@ -4,7 +4,7 @@
 #include "std_msgs/Empty.h"
 #include "std_msgs/Char.h"
 
-#include <rogi_link_msgs/rogi_link.h>
+#include <rogi_link_msgs/RogiLink.h>
 #include <string>
 #include <unistd.h>
 #include <fcntl.h>
@@ -45,7 +45,7 @@ char *sending_message;
 const int datasize = 2;
 
 
-void sub_callback(const rogi_link_msgs::rogi_link &serial_msg)
+void sub_callback(const rogi_link_msgs::RogiLink &serial_msg)
 {
     if (subflag)
     {
@@ -74,11 +74,11 @@ int main(int argc, char **argv)
     ros::NodeHandle n;
 
     //Publisher
-    ros::Publisher serial_pub = n.advertise<std_msgs::Float32MultiArray>("Serial_pub", 1000);
+    ros::Publisher serial_pub = n.advertise<std_msgs::Float32MultiArray>("serial_pub", 1000);
     ros::Publisher connection_status = n.advertise<std_msgs::Empty>("connection_status", 1);
 
     //Subscriber
-    ros::Subscriber serial_sub = n.subscribe("Serial_sub", 100, sub_callback);
+    ros::Subscriber serial_sub = n.subscribe("sending_data", 100, sub_callback);
 
     // Parameter
     ros::NodeHandle arg_n("~");
