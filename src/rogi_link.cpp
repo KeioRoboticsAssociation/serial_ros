@@ -4,8 +4,7 @@
 #include "std_msgs/Empty.h"
 #include "std_msgs/Char.h"
 
-#include <rogi_link_msgs/rogilink.h>
-
+#include <rogi_link_msgs/rogi_link.h>
 #include <string>
 #include <unistd.h>
 #include <fcntl.h>
@@ -42,29 +41,29 @@ char endmsg = '\n';
 bool subflag = false;
 int sleeptime = 5000; //us
 int sub_loop_rate = 200;
-char *floattochar;
-int floatdatasize = 0;
+char *sending_message;
+const int datasize = 2;
 
 
-void sub_callback(const std_msgs::Float32MultiArray &serial_msg)
+void sub_callback(const rogi_link_msgs::rogi_link &serial_msg)
 {
     if (subflag)
     {
         usleep(sleeptime);
         subflag == false;
     }
-    delete[] floattochar;
-    // floatdatasize = serial_msg.data.size(); //ここら辺場合に依ってしまう、他ノードでどこまで指定するか…
-    floattochar = new char[11];
-    floattochar[0] = 0xFF;
-    *(char *)(&floattochar[1]) = serial_msg.data[0]; //canID
+    delete[] sending_message;
+    // datasize = serial_msg.data.size(); //ここら辺場合に依ってしまう、他ノードでどこまで指定するか…
+    sending_message = new char[11];
+    sending_message[0] = 0xFF; //start flag
+    *(char *)(&sending_message[1]) = serial_msg.id; //canID
     //memcpy(&floattochar[1], &datasize, 4);
-    for (int i = 0; i < floatdatasize; i++)
+    for (int i = 0; i < datasize; i++)
     {
-        *(float *)(&floattochar[i * 4 + 2]) = serial_msg.data[i+1];
+        *(float *)(&sending_message[i * 4 + 2]) = serial_msg.data[i+1];
         //memcpy(&floattochar[i * 4 + 5], &serial_msg.data[i], 4);
     }
-    floattochar[floatdatasize * 4 + 5] = endmsg;
+    sending_message[datasize * 4 + 5] = endmsg;
 
     subflag = true;
 }
@@ -162,10 +161,10 @@ int main(int argc, char **argv)
         // publish
         if (subflag)
         {
-            rec = write(fd1, floattochar, floatdatasize * 4 + 6);
+            rec = write(fd1, sending_message, datasize * 4 + 6);
             if (rec < 0)
             {
-                ROS_ERROR_ONCE("Serial Fail: cound not write");
+                ROS_ERROR("Serial Fail: cound not write");
             }
             subflag = false;
         }

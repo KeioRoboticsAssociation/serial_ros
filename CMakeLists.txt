@@ -7,16 +7,23 @@ project(serial_ros)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS
+find_package(
+  rogi_link_msgs
+  catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
 )
 
+find_package(
+  Boost REQUIRED COMPONENTS 
+  system
+  )
+
 catkin_package(
-#  INCLUDE_DIRS include
+  INCLUDE_DIRS include
   LIBRARIES serial_ros
-  CATKIN_DEPENDS roscpp rospy std_msgs
+  CATKIN_DEPENDS rogi_link_msgs roscpp rospy std_msgs 
 #  DEPENDS system_lib
 )
 
@@ -25,9 +32,9 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-add_executable(rogi_serial_node src/rogi_serial.cpp)
-add_dependencies(rogi_serial_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(rogi_serial_node ${catkin_LIBRARIES})
+add_executable(rogi_link_node src/rogi_link.cpp)
+add_dependencies(rogi_link_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(rogi_link_node ${catkin_LIBRARIES})
 
 
 # add_executable(serial_ros src/serial_ros.cpp)
