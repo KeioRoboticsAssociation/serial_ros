@@ -74,11 +74,11 @@ int main(int argc, char **argv)
     ros::NodeHandle n;
 
     //Publisher
-    ros::Publisher serial_pub = n.advertise<std_msgs::Float32MultiArray>("serial_pub", 1000);
+    ros::Publisher serial_pub = n.advertise<std_msgs::Float32MultiArray>("rcv_serial", 1000);
     ros::Publisher connection_status = n.advertise<std_msgs::Empty>("connection_status", 1);
 
     //Subscriber
-    ros::Subscriber serial_sub = n.subscribe("sending_data", 100, sub_callback);
+    ros::Subscriber serial_sub = n.subscribe("send_serial", 100, sub_callback);
 
     // Parameter
     ros::NodeHandle arg_n("~");
