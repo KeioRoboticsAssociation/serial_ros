@@ -74,7 +74,12 @@ int main(int argc, char **argv)
     ros::NodeHandle n;
 
     //Publisher
-    ros::Publisher serial_pub = n.advertise<std_msgs::Float32MultiArray>("rcv_serial", 1000);
+    ros::Publisher serial_pub[31];
+    for(int i=0;i<32;i++){
+        // std::string node_name = "rcv_serial_"+ std::to_string(i);
+        serial_pub[i] = n.advertise<std_msgs::Float32MultiArray>("rcv_serial_"+ std::to_string(i), 1000);
+    }
+
     ros::Publisher connection_status = n.advertise<std_msgs::Empty>("connection_status", 1);
 
     //Subscriber
@@ -107,6 +112,7 @@ int main(int argc, char **argv)
     int arraysize = 0;
     int rec;
     int trash = 0;
+    short canid=0;
     ros::Rate loop_rate(sub_loop_rate);
 
     // remove initial_buff_data
@@ -134,6 +140,7 @@ int main(int argc, char **argv)
 
                 if(buf_pub[0]==0xFF) //checking start flag
                 {
+                    canid = *(short*)(&buf_pub[2]);
                     if (recv_data_size == 11) //data length 11byte
                     {
                         std_msgs::Float32MultiArray pub_float;
@@ -143,7 +150,7 @@ int main(int argc, char **argv)
                             pub_float.data[i] = *(float *)(&buf_pub[i * 4 + 2]);
                             //memcpy(&pub_float.data[i], &buf_pub[i * 4 + 5], 4);
                         }
-                        serial_pub.publish(pub_float);
+                        serial_pub[canid>>6 & 0b0000000000011111].publish(pub_float);
                         //現在は受信はfloatに限定、他用途ができた場合はfloat以外の処理も導入する必要あり
                     }
                     else
