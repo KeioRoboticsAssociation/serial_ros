@@ -43,7 +43,7 @@ bool subflag = false;
 int sleeptime = 5000; //us
 int sub_loop_rate = 200;
 char *sending_message;
-char *hard_id;
+
 const int datasize = 2;
 
 
@@ -74,12 +74,15 @@ int main(int argc, char **argv)
 {
     ros::init(argc, argv, "rogi_link_node");
     ros::NodeHandle n;
+    // ROS_INFO("wtf");
 
     //Publisher
     ros::Publisher serial_pub[31];
     for(int i=0;i<32;i++){
+        char hard_id[20];
         sprintf(hard_id,"%x",i);
-        std::string node_name = "rcv_serial_" + std::string(hard_id);
+        std::string node_name = "rcv_serial_";
+        node_name += hard_id;
         serial_pub[i] = n.advertise<std_msgs::Float32MultiArray>(node_name, 1000);
     }
 
