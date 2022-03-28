@@ -77,7 +77,7 @@ int main(int argc, char **argv)
     // ROS_INFO("wtf");
 
     //Publisher
-    ros::Publisher serial_pub[31];
+    ros::Publisher serial_pub[32];
     for(int i=0;i<32;i++){
         char hard_id[20];
         sprintf(hard_id,"%02x",i);
