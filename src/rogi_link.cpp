@@ -80,7 +80,7 @@ int main(int argc, char **argv)
     ros::Publisher serial_pub[31];
     for(int i=0;i<32;i++){
         char hard_id[20];
-        sprintf(hard_id,"%x",i);
+        sprintf(hard_id,"%02x",i);
         std::string node_name = "rcv_serial_";
         node_name += hard_id;
         serial_pub[i] = n.advertise<std_msgs::Float32MultiArray>(node_name, 1000);
