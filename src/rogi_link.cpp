@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <termios.h>
+#include <cstdio>
 
 #include <unistd.h>
 
@@ -42,6 +43,7 @@ bool subflag = false;
 int sleeptime = 5000; //us
 int sub_loop_rate = 200;
 char *sending_message;
+char *hard_id;
 const int datasize = 2;
 
 
@@ -76,8 +78,9 @@ int main(int argc, char **argv)
     //Publisher
     ros::Publisher serial_pub[31];
     for(int i=0;i<32;i++){
-        // std::string node_name = "rcv_serial_"+ std::to_string(i);
-        serial_pub[i] = n.advertise<std_msgs::Float32MultiArray>("rcv_serial_"+ std::to_string(i), 1000);
+        sprintf(hard_id,"%x",i);
+        std::string node_name = "rcv_serial_" + std::string(hard_id);
+        serial_pub[i] = n.advertise<std_msgs::Float32MultiArray>(node_name, 1000);
     }
 
     ros::Publisher connection_status = n.advertise<std_msgs::Empty>("connection_status", 1);
@@ -141,6 +144,7 @@ int main(int argc, char **argv)
                 if(buf_pub[0]==0xFF) //checking start flag
                 {
                     canid = *(short*)(&buf_pub[2]);
+
                     if (recv_data_size == 11) //data length 11byte
                     {
                         std_msgs::Float32MultiArray pub_float;
