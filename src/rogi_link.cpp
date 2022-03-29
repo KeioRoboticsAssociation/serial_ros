@@ -93,7 +93,7 @@ int main(int argc, char **argv)
 
     // Parameter
     ros::NodeHandle arg_n("~");
-    std::string port_name = "/dev/ttyACM0";
+    std::string port_name = "/dev/ttyUSB1";
     arg_n.getParam("port", port_name);
     arg_n.getParam("baudrate", BAUDRATE);
     arg_n.getParam("looprate", sub_loop_rate);
@@ -106,7 +106,7 @@ int main(int argc, char **argv)
         fd1 = open_serial(port_name.c_str());
         //ROS_ERROR("Serial Fail: cound not open %s", port_name.c_str());
         //ros::shutdown();
-        ROS_WARN_ONCE("Serial Connecting\n");
+        ROS_WARN("Serial Connecting\n");
 
         if (fd1 >= 0)   break;
     }
