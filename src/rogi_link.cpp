@@ -93,7 +93,7 @@ int main(int argc, char **argv)
 
     // Parameter
     ros::NodeHandle arg_n("~");
-    std::string port_name = "/dev/ttyUSB1";
+    std::string port_name = "/dev/ttyUSB0";
     arg_n.getParam("port", port_name);
     arg_n.getParam("baudrate", BAUDRATE);
     arg_n.getParam("looprate", sub_loop_rate);
@@ -107,6 +107,7 @@ int main(int argc, char **argv)
         //ROS_ERROR("Serial Fail: cound not open %s", port_name.c_str());
         //ros::shutdown();
         ROS_WARN("Serial Connecting\n");
+        usleep(1000);
 
         if (fd1 >= 0)   break;
     }
@@ -148,7 +149,7 @@ int main(int argc, char **argv)
                 {
                     canid = *(short*)(&buf_pub[2]);
 
-                    if (recv_data_size == 11) //data length 11byte
+                    if (recv_data_size == 12) //data length 12byte
                     {
                         std_msgs::Float32MultiArray pub_float;
                         pub_float.data.resize(2);
@@ -157,6 +158,7 @@ int main(int argc, char **argv)
                             pub_float.data[i] = *(float *)(&buf_pub[i * 4 + 2]);
                             //memcpy(&pub_float.data[i], &buf_pub[i * 4 + 5], 4);
                         }
+                        ROS_INFO("hardID is %d",canid>>6 & 0b0000000000011111);
                         serial_pub[canid>>6 & 0b0000000000011111].publish(pub_float);
                         //現在は受信はfloatに限定、他用途ができた場合はfloat以外の処理も導入する必要あり
                     }
@@ -184,8 +186,8 @@ int main(int argc, char **argv)
             subflag = false;
         }
 
-        std_msgs::Empty status_msg;
-        connection_status.publish(status_msg);
+        // std_msgs::Empty status_msg;
+        // connection_status.publish(status_msg);
 
         ros::spinOnce();
         loop_rate.sleep();
