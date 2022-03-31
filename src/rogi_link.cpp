@@ -41,7 +41,7 @@ int fd1 = 0;
 char endmsg = '\n';
 bool subflag = false;
 int sleeptime = 5000; //us
-int sub_loop_rate = 200;
+int sub_loop_rate = 100;
 char *sending_message;
 
 const int datasize = 2;
@@ -114,9 +114,9 @@ int main(int argc, char **argv)
 
     ROS_INFO("Serial Success");
 
-    char buf_pub[256] = {0};
+    unsigned char buf_pub[256] = {0};
     int recv_data_size = 0;
-    int arraysize = 0;
+    int arraysize = 2;
     int rec;
     int trash = 0;
     short canid=0;
@@ -144,7 +144,6 @@ int main(int argc, char **argv)
             {
                 // arraysize = *(int *)(&buf_pub[1]);
                 //memcpy(&arraysize, &(buf_pub[1]), 4);
-
                 if(buf_pub[0]==0xFF) //checking start flag
                 {
                     canid = *(short*)(&buf_pub[2]);
@@ -155,11 +154,12 @@ int main(int argc, char **argv)
                         pub_float.data.resize(2);
                         for (int i = 0; i < arraysize; i++)
                         {
-                            pub_float.data[i] = *(float *)(&buf_pub[i * 4 + 2]);
+                            pub_float.data[i] = *(float *)(&buf_pub[i * 4 + 3]);
                             //memcpy(&pub_float.data[i], &buf_pub[i * 4 + 5], 4);
                         }
-                        ROS_INFO("hardID is %d",canid>>6 & 0b0000000000011111);
+                        // ROS_INFO("hardID is %d",canid>>6 & 0b0000000000011111);
                         serial_pub[canid>>6 & 0b0000000000011111].publish(pub_float);
+                        // ROS_INFO("%f",pub_float.data[1]);
                         //現在は受信はfloatに限定、他用途ができた場合はfloat以外の処理も導入する必要あり
                     }
                     else
