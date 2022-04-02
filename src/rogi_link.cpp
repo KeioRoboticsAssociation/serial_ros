@@ -10,6 +10,7 @@
 #include <fcntl.h>
 #include <termios.h>
 #include <cstdio>
+#include <queue>
 
 #include <unistd.h>
 
@@ -42,33 +43,37 @@ char endmsg = '\n';
 bool subflag = false;
 int sleeptime = 5000; //us
 int sub_loop_rate = 100;
-char *sending_message;
+std::queue<rogi_link_msgs::RogiLink> send_que;
+std_msgs::Bool status_msg;
 
-const int datasize = 2;
+// const int datasize = 2;
 
 
 void sub_callback(const rogi_link_msgs::RogiLink &serial_msg)
 {
-    if (subflag)
-    {
-        usleep(sleeptime);
-        subflag == false;
-    }
-    delete[] sending_message;
-    // datasize = serial_msg.data.size(); //ここら辺場合に依ってしまう、他ノードでどこまで指定するか…
-    sending_message = new char[11];
-    sending_message[0] = 0xFF; //start flag
-    *(char *)(&sending_message[1]) = serial_msg.id; //canID
-    //memcpy(&floattochar[1], &datasize, 4);
-    for (int i = 0; i < datasize; i++)
-    {
-        *(float *)(&sending_message[i * 4 + 2]) = serial_msg.data[i+1];
-        //memcpy(&floattochar[i * 4 + 5], &serial_msg.data[i], 4);
-    }
-    sending_message[datasize * 4 + 5] = endmsg;
-
+    // if (subflag)
+    // {
+    //     usleep(sleeptime);
+    //     subflag == false;
+    // }
+    // // delete[] sending_message;
+    // // datasize = serial_msg.data.size(); //ここら辺場合に依ってしまう、他ノードでどこまで指定するか…
+    // // sending_message = new char[12];
+    // sending_message[0] = 0xFF; //start flag
+    // *(unsigned short *)(&sending_message[1]) = serial_msg.id; //canID
+    // //memcpy(&floattochar[1], &datasize, 4);
+    // // for (int i = 0; i < datasize; i++)
+    // // {
+    // //     // *(float *)(&sending_message[i * 4 + 2]) = serial_msg.data[i+1];
+    // //     //memcpy(&floattochar[i * 4 + 5], &serial_msg.data[i], 4);
+    // // }
+    // memcpy(sending_message+3, serial_msg.data.begin(),serial_msg.data.size());
+    // sending_message[11] = endmsg;
+    ROS_INFO("subsub%d",serial_msg.id);
+    send_que.push(serial_msg);
     subflag = true;
 }
+
 
 int main(int argc, char **argv)
 {
@@ -86,7 +91,7 @@ int main(int argc, char **argv)
         serial_pub[i] = n.advertise<std_msgs::Float32MultiArray>(node_name, 1000);
     }
 
-    ros::Publisher connection_status = n.advertise<std_msgs::Empty>("connection_status", 1);
+    ros::Publisher connection_status = n.advertise<std_msgs::Bool>("connection_status", 1);
 
     //Subscriber
     ros::Subscriber serial_sub = n.subscribe("send_serial", 100, sub_callback);
@@ -114,6 +119,9 @@ int main(int argc, char **argv)
 
     ROS_INFO("Serial Success");
 
+    status_msg.data=true;
+    connection_status.publish(status_msg);
+
     unsigned char buf_pub[256] = {0};
     int recv_data_size = 0;
     int arraysize = 2;
@@ -129,10 +137,13 @@ int main(int argc, char **argv)
         usleep(1000);
     }
 
+    // ros::spin();
+
     while (ros::ok())
     {
         int recv_data = read(fd1, &buf_pub[recv_data_size], sizeof(buf_pub));
-
+        
+        //subscribe
         if (recv_data > 0)
         {
             recv_data_size += recv_data;
@@ -178,16 +189,33 @@ int main(int argc, char **argv)
         // publish
         if (subflag)
         {
-            rec = write(fd1, sending_message, datasize * 4 + 6);
-            if (rec < 0)
-            {
-                ROS_ERROR("Serial Fail: cound not write");
+            while(!send_que.empty()){
+                char sending_message[12];
+                rogi_link_msgs::RogiLink message=send_que.front();
+                send_que.pop();
+                sending_message[0] = 0xFF; //start flag
+                *(unsigned short *)(&sending_message[1]) = message.id; //canID
+                //memcpy(&floattochar[1], &datasize, 4);
+                // for (int i = 0; i < datasize; i++)
+                // {
+                //     // *(float *)(&sending_message[i * 4 + 2]) = serial_msg.data[i+1];
+                //     //memcpy(&floattochar[i * 4 + 5], &serial_msg.data[i], 4);
+                // }
+                memcpy(sending_message+3, message.data.begin(),message.data.size());
+                sending_message[11] = endmsg;
+                // ROS_INFO("sub%x",*(u_int16_t *)&sending_message[1]);
+                rec = write(fd1, sending_message, 12);
+                if (rec < 0)
+                {
+                    ROS_ERROR("Serial Fail: cound not write");
+                }
+                ROS_INFO("%d",*(u_int16_t *)&sending_message[1]);
             }
             subflag = false;
         }
 
-        // std_msgs::Empty status_msg;
-        // connection_status.publish(status_msg);
+        status_msg.data=true;
+        connection_status.publish(status_msg);
 
         ros::spinOnce();
         loop_rate.sleep();
