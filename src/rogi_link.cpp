@@ -29,6 +29,7 @@ int open_serial(const char *device_name)
     cfsetospeed(&conf_tio, BAUDRATE);
     //non canonical, non echo back
     conf_tio.c_lflag &= ~(ECHO | ICANON);
+    //change end flag from \r\n to \n 
     conf_tio.c_oflag &= ~(ONLCR | OCRNL);
     //non blocking
     conf_tio.c_cc[VMIN] = 0;
@@ -51,25 +52,7 @@ std_msgs::Bool status_msg;
 
 void sub_callback(const rogi_link_msgs::RogiLink &serial_msg)
 {
-    // if (subflag)
-    // {
-    //     usleep(sleeptime);
-    //     subflag == false;
-    // }
-    // // delete[] sending_message;
-    // // datasize = serial_msg.data.size(); //ここら辺場合に依ってしまう、他ノードでどこまで指定するか…
-    // // sending_message = new char[12];
-    // sending_message[0] = 0xFF; //start flag
-    // *(unsigned short *)(&sending_message[1]) = serial_msg.id; //canID
-    // //memcpy(&floattochar[1], &datasize, 4);
-    // // for (int i = 0; i < datasize; i++)
-    // // {
-    // //     // *(float *)(&sending_message[i * 4 + 2]) = serial_msg.data[i+1];
-    // //     //memcpy(&floattochar[i * 4 + 5], &serial_msg.data[i], 4);
-    // // }
-    // memcpy(sending_message+3, serial_msg.data.begin(),serial_msg.data.size());
-    // sending_message[11] = endmsg;
-    ROS_INFO("subsub%d",serial_msg.id);
+    // ROS_INFO("subsub%d",serial_msg.id);//id表示
     send_que.push(serial_msg);
     subflag = true;
 }
