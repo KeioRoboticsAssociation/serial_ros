@@ -140,7 +140,7 @@ int main(int argc, char **argv)
                 //memcpy(&arraysize, &(buf_pub[1]), 4);
                 if(buf_pub[0]==0xFF) //checking start flag
                 {
-                    canid = *(short*)(&buf_pub[2]);
+                    canid = *(short*)(&buf_pub[1]);
 
                     if (recv_data_size == 12) //data length 12byte
                     {
@@ -151,7 +151,7 @@ int main(int argc, char **argv)
                             pub_float.data[i] = *(float *)(&buf_pub[i * 4 + 3]);
                             //memcpy(&pub_float.data[i], &buf_pub[i * 4 + 5], 4);
                         }
-                        // ROS_INFO("hardID is %d",canid>>6 & 0b0000000000011111);
+                        ROS_INFO("hardID is %d",canid>>6 & 0b0000000000011111);
                         serial_pub[canid>>6 & 0b0000000000011111].publish(pub_float);
                         // ROS_INFO("%f",pub_float.data[1]);
                         //現在は受信はfloatに限定、他用途ができた場合はfloat以外の処理も導入する必要あり
@@ -169,8 +169,14 @@ int main(int argc, char **argv)
             }
         }
 
+        // else if(recv_data==0) printf("0\n");
+        // else if(recv_data==-1)printf("-1\n");
+        // else{
+        //     printf("lol\n");
+        // }
+
         // publish
-        if (subflag)
+        if (false)
         {
             while(!send_que.empty()){
                 char sending_message[12];
@@ -192,7 +198,7 @@ int main(int argc, char **argv)
                 {
                     ROS_ERROR("Serial Fail: cound not write");
                 }
-                ROS_INFO("%d",*(u_int16_t *)&sending_message[1]);
+                // ROS_INFO("%d",*(u_int16_t *)&sending_message[1]);
             }
             subflag = false;
         }
