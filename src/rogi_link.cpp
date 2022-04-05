@@ -57,6 +57,10 @@ void sub_callback(const rogi_link_msgs::RogiLink &serial_msg)
     subflag = true;
 }
 
+void reveiver(void){
+
+}
+
 
 int main(int argc, char **argv)
 {
@@ -105,7 +109,8 @@ int main(int argc, char **argv)
     status_msg.data=true;
     connection_status.publish(status_msg);
 
-    unsigned char buf_pub[256] = {0};
+    std::queue<char> buf_pub;
+    char trash_pub[256];
     int recv_data_size = 0;
     int arraysize = 2;
     int rec;
@@ -116,58 +121,116 @@ int main(int argc, char **argv)
     // remove initial_buff_data
     for (int i = 0; i < 1000; i++)
     {
-        trash=read(fd1, &buf_pub[0], sizeof(buf_pub));
+        trash=read(fd1, &trash_pub, sizeof(trash_pub));
         usleep(1000);
     }
 
     // ros::spin();
+    size_t zero_count = 0;
+    bool is_receiving = false;
+    char frame_buffer[15];
+    size_t receive_pos = 0;
 
     while (ros::ok())
     {
-        int recv_data = read(fd1, &buf_pub[recv_data_size], sizeof(buf_pub));
-        
-        //subscribe
-        if (recv_data > 0)
-        {
-            recv_data_size += recv_data;
-            if (recv_data_size >= 256)
-            {
-                recv_data_size = 0;
-            }
-            else if (buf_pub[recv_data_size - 1] == endmsg)
-            {
-                // arraysize = *(int *)(&buf_pub[1]);
-                //memcpy(&arraysize, &(buf_pub[1]), 4);
-                if(buf_pub[0]==0xFF) //checking start flag
-                {
-                    canid = *(short*)(&buf_pub[1]);
+        char buff[256] = {0};
+        int recv_data = read(fd1, buff, sizeof(buff));
 
-                    if (recv_data_size == 12) //data length 12byte
+        for (int i = 0; i < recv_data; i++)
+        {
+            buf_pub.push(buff[i]);
+        }
+
+        //subscribe
+        while (!buf_pub.empty())
+        {
+            char front_value = buf_pub.front();
+            buf_pub.pop();
+            if (!is_receiving)
+            {
+                ROS_INFO("start frame");
+                memset(frame_buffer, 0, sizeof(frame_buffer));
+                zero_count = frame_buffer[0] = front_value;
+                is_receiving = true;
+                receive_pos = 1;
+
+                continue;
+            }
+            if(receive_pos > sizeof(frame_buffer)){
+                is_receiving = false;
+                continue;
+            }
+
+            zero_count--;
+            if(zero_count == 0){
+                frame_buffer[receive_pos] = 0;
+                zero_count = front_value;
+                if (front_value == 0)
+                {
+                    if (receive_pos == 11)
                     {
+                        canid = *(uint16_t *)(&frame_buffer[1]);
                         std_msgs::Float32MultiArray pub_float;
                         pub_float.data.resize(2);
-                        for (int i = 0; i < arraysize; i++)
-                        {
-                            pub_float.data[i] = *(float *)(&buf_pub[i * 4 + 3]);
-                            //memcpy(&pub_float.data[i], &buf_pub[i * 4 + 5], 4);
-                        }
-                        ROS_INFO("hardID is %d",canid>>6 & 0b0000000000011111);
-                        serial_pub[canid>>6 & 0b0000000000011111].publish(pub_float);
-                        // ROS_INFO("%f",pub_float.data[1]);
-                        //現在は受信はfloatに限定、他用途ができた場合はfloat以外の処理も導入する必要あり
-                    }
-                    else
-                    {
-                        ROS_WARN("Datasize Error");
-                    }
-                    //ただしバッファーに複数回分の受信データがストックされてしまった場合についてもDatasize Errorになってしまっている
-                }
+                        pub_float.data[0] = *(float *)(&frame_buffer[3]);
+                        pub_float.data[1] = *(float *)(&frame_buffer[7]);
+                        // memcpy(&pub_float.front_value[i], &buf_pub[i * 4 + 5], 4);
 
-                else    ROS_WARN("START FLAG ERROR");
-            
-                recv_data_size = 0;
+                        ROS_INFO("hardID is %d", canid >> 6 & 0b0000000000011111);
+                        serial_pub[canid >> 6 & 0b0000000000011111].publish(pub_float);
+                    }else{
+                        ROS_INFO("data length is not correct");
+                    }
+                    is_receiving = false;
+                    continue;
+                    // ROS_INFO("%f",pub_float.front_value[1]);
+                    //現在は受信はfloatに限定、他用途ができた場合はfloat以外の処理も導入する必要あり
+                }
+            }else{
+                if(front_value == 0){              
+                    is_receiving = false;
+                    ROS_INFO("invalid data");
+                    continue;
+                }
+                frame_buffer[receive_pos] = front_value;
             }
+            ++receive_pos;
+            // recv_data_size += recv_data;
+            // if (buf_pub[recv_data_size - 1] == endmsg)
+            // {
+            //     // arraysize = *(int *)(&buf_pub[1]);
+            //     //memcpy(&arraysize, &(buf_pub[1]), 4);
+            //     if(buf_pub[0]==0xFF) //checking start flag
+            //     {
+            //         canid = *(short*)(&buf_pub[1]);
+
+            //         if (recv_data_size == 12) //data length 12byte
+            //         {
+            //             std_msgs::Float32MultiArray pub_float;
+            //             pub_float.data.resize(2);
+            //             for (int i = 0; i < arraysize; i++)
+            //             {
+            //                 pub_float.data[i] = *(float *)(&buf_pub[i * 4 + 3]);
+            //                 //memcpy(&pub_float.data[i], &buf_pub[i * 4 + 5], 4);
+            //             }
+            //             ROS_INFO("hardID is %d",canid>>6 & 0b0000000000011111);
+            //             serial_pub[canid>>6 & 0b0000000000011111].publish(pub_float);
+            //             // ROS_INFO("%f",pub_float.data[1]);
+            //             //現在は受信はfloatに限定、他用途ができた場合はfloat以外の処理も導入する必要あり
+            //         }
+            //         else
+            //         {
+            //             ROS_WARN("Datasize Error");
+            //         }
+            //         //ただしバッファーに複数回分の受信データがストックされてしまった場合についてもDatasize Errorになってしまっている
+            //     }
+
+            //     else    ROS_WARN("START FLAG ERROR");
+            
+            //     recv_data_size = 0;
+            // }
         }
+        ROS_INFO("end parsing while");
 
         // else if(recv_data==0) printf("0\n");
         // else if(recv_data==-1)printf("-1\n");
@@ -176,22 +239,40 @@ int main(int argc, char **argv)
         // }
 
         // publish
-        if (false)
+        if (subflag)
         {
             while(!send_que.empty()){
-                char sending_message[12];
-                rogi_link_msgs::RogiLink message=send_que.front();
+                // ROS_INFO("lol");
+                char sending_message[256] = {0};
+                rogi_link_msgs::RogiLink message = send_que.front();
                 send_que.pop();
-                sending_message[0] = 0xFF; //start flag
+                sending_message[0] = 0; //start flag
                 *(unsigned short *)(&sending_message[1]) = message.id; //canID
-                //memcpy(&floattochar[1], &datasize, 4);
-                // for (int i = 0; i < datasize; i++)
+                ROS_INFO("sending to %x",message.id);
+                memcpy(sending_message+3, message.data.begin(),message.data.size()); //data
+                sending_message[11] = 0;
+
+                int lastZero = 11;
+                for (int i = 10; i >= 0; i--)
+                {
+                    if (sending_message[i] != 0)
+                        continue;
+                    sending_message[i] = lastZero - i;
+                    lastZero = i;
+                }
+                int trash = 0;
+                short canid=0;
+
+                // // remove initial_buff_data
+                // for (int i = 0; i < 1000; i++)
                 // {
-                //     // *(float *)(&sending_message[i * 4 + 2]) = serial_msg.data[i+1];
-                //     //memcpy(&floattochar[i * 4 + 5], &serial_msg.data[i], 4);
+                //     trash=read(fd1, &trash_pub, sizeof(trash_pub));
+                //     usleep(1000);
                 // }
-                memcpy(sending_message+3, message.data.begin(),message.data.size());
-                sending_message[11] = endmsg;
+
+                // ros::spin();
+                // size_t zero_count = 0;
+
                 // ROS_INFO("sub%x",*(u_int16_t *)&sending_message[1]);
                 rec = write(fd1, sending_message, 12);
                 if (rec < 0)
@@ -200,12 +281,11 @@ int main(int argc, char **argv)
                 }
                 // ROS_INFO("%d",*(u_int16_t *)&sending_message[1]);
             }
-            subflag = false;
+                    subflag = false;
         }
 
         status_msg.data=true;
         connection_status.publish(status_msg);
-
         ros::spinOnce();
         loop_rate.sleep();
     }
