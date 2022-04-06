@@ -176,7 +176,7 @@ int main(int argc, char **argv)
                         pub_float.data[1] = *(float *)(&frame_buffer[7]);
                         // memcpy(&pub_float.front_value[i], &buf_pub[i * 4 + 5], 4);
 
-                        ROS_INFO("hardID is %d", canid >> 6 & 0b0000000000011111);
+                        ROS_INFO("##################hardID is %d", canid >> 6 & 0b0000000000011111);
                         serial_pub[canid >> 6 & 0b0000000000011111].publish(pub_float);
                     }else{
                         ROS_INFO("data length is not correct");
