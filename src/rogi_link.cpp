@@ -25,6 +25,7 @@ int open_serial(const char *device_name)
     tcgetattr(fd1, &conf_tio);
     //set baudrate
     //speed_t BAUDRATE = B115200;
+    cfmakeraw(&conf_tio);
     cfsetispeed(&conf_tio, BAUDRATE);
     cfsetospeed(&conf_tio, BAUDRATE);
     //non canonical, non echo back
