@@ -13,5 +13,5 @@
 
 
 ## Published Topics
-- **/rcv_serial** (type: `rogi_link_msgs::RogiLink`)
+- **/rcv_serial** (type: `td_msgs::Float32MultiArray`)
 シリアルで受信したデータを出力する、現在未設定

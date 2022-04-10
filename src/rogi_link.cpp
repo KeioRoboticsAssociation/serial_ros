@@ -58,8 +58,8 @@ void sub_callback(const rogi_link_msgs::RogiLink &serial_msg)
     subflag = true;
 }
 
-void reveiver(void){
-
+void rogi_link_init(void){
+    
 }
 
 
@@ -109,6 +109,7 @@ int main(int argc, char **argv)
 
     status_msg.data=true;
     connection_status.publish(status_msg);
+
 
     std::queue<char> buf_pub;
     char trash_pub[256];
