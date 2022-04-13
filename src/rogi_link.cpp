@@ -186,16 +186,6 @@ int main(int argc, char **argv)
                 int trash = 0;
                 short canid=0;
 
-                // // remove initial_buff_data
-                // for (int i = 0; i < 1000; i++)
-                // {
-                //     trash=read(fd1, &trash_pub, sizeof(trash_pub));
-                //     usleep(1000);
-                // }
-
-                // ros::spin();
-                // size_t zero_count = 0;
-
                 // ROS_INFO("sub%x",*(u_int16_t *)&sending_message[1]);
                 rec = write(fd1, sending_message, 12);
                 if (rec < 0)
@@ -259,7 +249,6 @@ int main(int argc, char **argv)
                     }
                     is_receiving = false;
                     continue;
-                    // ROS_INFO("%f",pub_float.front_value[1]);
                     //現在は受信はfloatに限定、他用途ができた場合はfloat以外の処理も導入する必要あり
                 }
             }else{
@@ -271,40 +260,6 @@ int main(int argc, char **argv)
                 frame_buffer[receive_pos] = front_value;
             }
             ++receive_pos;
-            // recv_data_size += recv_data;
-            // if (buf_pub[recv_data_size - 1] == endmsg)
-            // {
-            //     // arraysize = *(int *)(&buf_pub[1]);
-            //     //memcpy(&arraysize, &(buf_pub[1]), 4);
-            //     if(buf_pub[0]==0xFF) //checking start flag
-            //     {
-            //         canid = *(short*)(&buf_pub[1]);
-
-            //         if (recv_data_size == 12) //data length 12byte
-            //         {
-            //             std_msgs::Float32MultiArray pub_float;
-            //             pub_float.data.resize(2);
-            //             for (int i = 0; i < arraysize; i++)
-            //             {
-            //                 pub_float.data[i] = *(float *)(&buf_pub[i * 4 + 3]);
-            //                 //memcpy(&pub_float.data[i], &buf_pub[i * 4 + 5], 4);
-            //             }
-            //             ROS_INFO("hardID is %d",canid>>6 & 0b0000000000011111);
-            //             serial_pub[canid>>6 & 0b0000000000011111].publish(pub_float);
-            //             // ROS_INFO("%f",pub_float.data[1]);
-            //             //現在は受信はfloatに限定、他用途ができた場合はfloat以外の処理も導入する必要あり
-            //         }
-            //         else
-            //         {
-            //             ROS_WARN("Datasize Error");
-            //         }
-            //         //ただしバッファーに複数回分の受信データがストックされてしまった場合についてもDatasize Errorになってしまっている
-            //     }
-
-            //     else    ROS_WARN("START FLAG ERROR");
-
-            //     recv_data_size = 0;
-            // }
         }
         ROS_INFO("end parsing while");
 
