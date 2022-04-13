@@ -15,6 +15,7 @@
 #include <unistd.h>
 
 int BAUDRATE = B115200;
+const char HARD_RESET = 0x01;
 
 int open_serial(const char *device_name)
 {
@@ -30,7 +31,7 @@ int open_serial(const char *device_name)
     cfsetospeed(&conf_tio, BAUDRATE);
     //non canonical, non echo back
     conf_tio.c_lflag &= ~(ECHO | ICANON);
-    //change end flag from \r\n to \n 
+    //change end flag from \r\n to \n
     conf_tio.c_oflag &= ~(ONLCR | OCRNL);
     //non blocking
     conf_tio.c_cc[VMIN] = 0;
@@ -48,7 +49,6 @@ int sub_loop_rate = 100;
 std::queue<rogi_link_msgs::RogiLink> send_que;
 std_msgs::Bool status_msg;
 
-// const int datasize = 2;
 
 
 void sub_callback(const rogi_link_msgs::RogiLink &serial_msg)
@@ -59,7 +59,31 @@ void sub_callback(const rogi_link_msgs::RogiLink &serial_msg)
 }
 
 void rogi_link_init(void){
-    
+    int rec = 0;
+    for(int i=0;i<32;i++){
+        rogi_link_msgs::RogiLink init_message;
+        init_message.id = i<<6 | HARD_RESET;
+        init_message.data = {0};
+        char sending_message[12] = {0};
+        sending_message[0] = 0; //start flag
+        *(unsigned short *)(&sending_message[1]) = init_message.id; //canID
+        // ROS_INFO("sending to %x",init_message.id);
+        memcpy(sending_message+3, init_message.data.begin(),init_message.data.size()); //data
+        sending_message[11] = 0;
+
+        int lastZero = 11;
+        for (int i = 10; i >= 0; i--){
+            if (sending_message[i] != 0)
+                continue;
+            sending_message[i] = lastZero - i;
+            lastZero = i;
+        }
+        rec = write(fd1, sending_message, 12);
+        if (rec < 0){
+            ROS_ERROR("Serial Fail: cound not write");
+        }
+    }
+    ROS_INFO("Hardware reset complete");
 }
 
 
@@ -78,6 +102,7 @@ int main(int argc, char **argv)
         node_name += hard_id;
         serial_pub[i] = n.advertise<std_msgs::Float32MultiArray>(node_name, 1000);
     }
+    //受信する32デバイス分のtopicをpublish
 
     ros::Publisher connection_status = n.advertise<std_msgs::Bool>("connection_status", 1);
 
@@ -110,6 +135,8 @@ int main(int argc, char **argv)
     status_msg.data=true;
     connection_status.publish(status_msg);
 
+    //initting hardware
+    rogi_link_init();
 
     std::queue<char> buf_pub;
     char trash_pub[256];
@@ -135,6 +162,53 @@ int main(int argc, char **argv)
 
     while (ros::ok())
     {
+        // serial publish
+        if (subflag)
+        {
+            while(!send_que.empty()){
+                char sending_message[256] = {0};
+                rogi_link_msgs::RogiLink message = send_que.front();
+                send_que.pop();
+                sending_message[0] = 0; //start flag
+                *(unsigned short *)(&sending_message[1]) = message.id; //canID
+                ROS_INFO("sending to %x",message.id);
+                memcpy(sending_message+3, message.data.begin(),message.data.size()); //data
+                sending_message[11] = 0;
+
+                int lastZero = 11;
+                for (int i = 10; i >= 0; i--)
+                {
+                    if (sending_message[i] != 0)
+                        continue;
+                    sending_message[i] = lastZero - i;
+                    lastZero = i;
+                }
+                int trash = 0;
+                short canid=0;
+
+                // // remove initial_buff_data
+                // for (int i = 0; i < 1000; i++)
+                // {
+                //     trash=read(fd1, &trash_pub, sizeof(trash_pub));
+                //     usleep(1000);
+                // }
+
+                // ros::spin();
+                // size_t zero_count = 0;
+
+                // ROS_INFO("sub%x",*(u_int16_t *)&sending_message[1]);
+                rec = write(fd1, sending_message, 12);
+                if (rec < 0)
+                {
+                    ROS_ERROR("Serial Fail: cound not write");
+                }
+                // ROS_INFO("%d",*(u_int16_t *)&sending_message[1]);
+            }
+
+            subflag = false;
+        }
+
+        //serial subscribe
         char buff[256] = {0};
         int recv_data = read(fd1, buff, sizeof(buff));
 
@@ -189,7 +263,7 @@ int main(int argc, char **argv)
                     //現在は受信はfloatに限定、他用途ができた場合はfloat以外の処理も導入する必要あり
                 }
             }else{
-                if(front_value == 0){              
+                if(front_value == 0){
                     is_receiving = false;
                     ROS_INFO("invalid data");
                     continue;
@@ -228,66 +302,15 @@ int main(int argc, char **argv)
             //     }
 
             //     else    ROS_WARN("START FLAG ERROR");
-            
+
             //     recv_data_size = 0;
             // }
         }
         ROS_INFO("end parsing while");
 
-        // else if(recv_data==0) printf("0\n");
-        // else if(recv_data==-1)printf("-1\n");
-        // else{
-        //     printf("lol\n");
-        // }
-
-        // publish
-        if (subflag)
-        {
-            while(!send_que.empty()){
-                // ROS_INFO("lol");
-                char sending_message[256] = {0};
-                rogi_link_msgs::RogiLink message = send_que.front();
-                send_que.pop();
-                sending_message[0] = 0; //start flag
-                *(unsigned short *)(&sending_message[1]) = message.id; //canID
-                ROS_INFO("sending to %x",message.id);
-                memcpy(sending_message+3, message.data.begin(),message.data.size()); //data
-                sending_message[11] = 0;
-
-                int lastZero = 11;
-                for (int i = 10; i >= 0; i--)
-                {
-                    if (sending_message[i] != 0)
-                        continue;
-                    sending_message[i] = lastZero - i;
-                    lastZero = i;
-                }
-                int trash = 0;
-                short canid=0;
-
-                // // remove initial_buff_data
-                // for (int i = 0; i < 1000; i++)
-                // {
-                //     trash=read(fd1, &trash_pub, sizeof(trash_pub));
-                //     usleep(1000);
-                // }
-
-                // ros::spin();
-                // size_t zero_count = 0;
-
-                // ROS_INFO("sub%x",*(u_int16_t *)&sending_message[1]);
-                rec = write(fd1, sending_message, 12);
-                if (rec < 0)
-                {
-                    ROS_ERROR("Serial Fail: cound not write");
-                }
-                // ROS_INFO("%d",*(u_int16_t *)&sending_message[1]);
-            }
-                    subflag = false;
-        }
-
-        status_msg.data=true;
+        //publishing connection status
         connection_status.publish(status_msg);
+
         ros::spinOnce();
         loop_rate.sleep();
     }
