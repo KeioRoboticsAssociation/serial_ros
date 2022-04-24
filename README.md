@@ -9,9 +9,12 @@
 
 ## Subscribed Topics
 - **/send_serial** (type: `rogi_link_msgs::RogiLink`)
-このトピックを受信してシリアル通信データとしてマイコンへ出力を行う。 
+このトピックを受信してシリアル通信データとしてマイコンへ出力を行う。
 
 
 ## Published Topics
 - **/rcv_serial** (type: `td_msgs::Float32MultiArray`)
 シリアルで受信したデータを出力する、現在未設定
+
+# SerialRosについて
+RogiLinkが搭載される以前から利用している通信モジュール。

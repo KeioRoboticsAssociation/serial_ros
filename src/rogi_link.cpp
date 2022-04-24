@@ -48,6 +48,7 @@ int sleeptime = 5000; //us
 int sub_loop_rate = 100;
 std::queue<rogi_link_msgs::RogiLink> send_que;
 std_msgs::Bool status_msg;
+bool emergency_flag = false;
 
 
 
@@ -55,6 +56,14 @@ void sub_callback(const rogi_link_msgs::RogiLink &serial_msg)
 {
     // ROS_INFO("subsub%d",serial_msg.id);//id表示
     send_que.push(serial_msg);
+    subflag = true;
+}
+
+void emergency_callback(const std_msgs::Empty &emergency_stop_flag) {
+    rogi_link_msgs::RogiLink emergency_msg;
+    emergency_msg.id = 0;
+    emergency_msg.data = {0};
+    send_que.push(emergency_msg);
     subflag = true;
 }
 
@@ -108,6 +117,7 @@ int main(int argc, char **argv)
 
     //Subscriber
     ros::Subscriber serial_sub = n.subscribe("send_serial", 100, sub_callback);
+    ros::Subscriber emergency_sub = n.subscribe("emergency_stop_flag" , 100, emergency_callback);
 
     // Parameter
     ros::NodeHandle arg_n("~");
@@ -124,7 +134,7 @@ int main(int argc, char **argv)
         fd1 = open_serial(port_name.c_str());
         //ROS_ERROR("Serial Fail: cound not open %s", port_name.c_str());
         //ros::shutdown();
-        ROS_WARN("Serial Connecting\n");
+        ROS_WARN_ONCE("Serial Connecting\n");
         usleep(1000);
 
         if (fd1 >= 0)   break;
@@ -264,6 +274,7 @@ int main(int argc, char **argv)
         ROS_INFO("end parsing while");
 
         //publishing connection status
+        status_msg.data=true;
         connection_status.publish(status_msg);
 
         ros::spinOnce();

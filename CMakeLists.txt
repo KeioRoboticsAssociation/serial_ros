@@ -16,14 +16,14 @@ find_package(
 )
 
 find_package(
-  Boost REQUIRED COMPONENTS 
+  Boost REQUIRED COMPONENTS
   system
   )
 
 catkin_package(
   # INCLUDE_DIRS include
   LIBRARIES serial_ros
-  CATKIN_DEPENDS rogi_link_msgs roscpp rospy std_msgs 
+  CATKIN_DEPENDS rogi_link_msgs roscpp rospy std_msgs
 #  DEPENDS system_lib
 )
 
@@ -37,9 +37,9 @@ add_dependencies(rogi_link_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXP
 target_link_libraries(rogi_link_node ${catkin_LIBRARIES})
 
 
-# add_executable(serial_ros src/serial_ros.cpp)
-# add_dependencies(serial_ros ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-# target_link_libraries(serial_ros ${catkin_LIBRARIES})
+add_executable(serial_ros_node src/serial_ros.cpp)
+add_dependencies(serial_ros_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(serial_ros_node ${catkin_LIBRARIES})
 
 # add_executable(serial_test_sync_node src/serial_test_sync.cpp)
 # add_dependencies(serial_test_sync_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
