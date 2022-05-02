@@ -222,25 +222,28 @@ int main(int argc, char** argv) {
 
     // publish
     if (floatflag) {
-      while (!floatQueue.empty()) {
-        floatdatasize = floatQueue.front().data.size();
+        std_msgs::Float32MultiArray float_data;
+        while(!floatQueue.empty()){
+            float_data = floatQueue.front();
+            floatQueue.pop();
+        }
+        floatdatasize = float_data.data.size();
         char floattochar[14];
         if (floatdatasize != 2)
           continue;
         floattochar[0] = 'f';
         *(int*)(&floattochar[1]) = floatdatasize;
         for (int i = 0; i < floatdatasize; i++) {
-          *(float*)(&floattochar[i * 4 + 5]) = floatQueue.front().data[i];
+          *(float*)(&floattochar[i * 4 + 5]) = float_data.data[i];
         }
         floattochar[floatdatasize * 4 + 5] = endmsg;
-        floatQueue.pop();
 
         rec = write(fd1, floattochar, floatdatasize * 4 + 6);
         if (rec < 0) {
           ROS_ERROR_ONCE("Serial Fail: cound not write float");
         }
-      }
-      floatflag = false;
+
+        floatflag = false;
     } else if (intflag) {
       rec = write(fd1, inttochar, intdatasize * 4 + 6);
       if (rec < 0) {
